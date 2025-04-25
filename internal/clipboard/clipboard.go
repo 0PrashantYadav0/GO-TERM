@@ -1,7 +1,9 @@
 package clipboard
 
 import (
+	"os/exec"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -92,4 +94,12 @@ func generateFilename() string {
 // WriteText writes text to the system clipboard
 func WriteText(text string) error {
 	return clipboard.WriteAll(text)
+}
+
+// Write copies text to the system clipboard
+func Write(text string) error {
+	// For macOS
+	cmd := exec.Command("pbcopy")
+	cmd.Stdin = strings.NewReader(text)
+	return cmd.Run()
 }

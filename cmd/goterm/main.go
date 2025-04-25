@@ -192,6 +192,7 @@ func handleSpecialCommands(input string, history *terminal.History, spinner *ui.
 	}
 
 	cmd := parts[0]
+	successColor := color.New(color.FgGreen).SprintFunc()
 
 	switch cmd {
 	case "history":
@@ -217,6 +218,12 @@ func handleSpecialCommands(input string, history *terminal.History, spinner *ui.
 			fmt.Println("Sorry, I couldn't help with that error.")
 		} else {
 			fmt.Println("Try:", result)
+
+			// Copy the command to clipboard
+			if err := clipboard.Write(result); err == nil {
+				fmt.Println(successColor("✓ Command copied to clipboard"))
+			}
+
 			// Offer to execute the command
 			fmt.Print("Execute this command? [y/N]: ")
 			reader := bufio.NewReader(os.Stdin)
@@ -247,15 +254,10 @@ func handleSpecialCommands(input string, history *terminal.History, spinner *ui.
 			fmt.Println("Sorry, I couldn't generate a command for that query.")
 		} else {
 			fmt.Println("Try:", result)
-			// Offer to execute the command
-			fmt.Print("Execute this command? [y/N]: ")
-			reader := bufio.NewReader(os.Stdin)
-			response, _ := reader.ReadString('\n')
-			response = strings.TrimSpace(response)
 
-			if strings.ToLower(response) == "y" {
-				history.Add(result)
-				terminal.ExecuteCommand(result)
+			// Copy the command to clipboard
+			if err := clipboard.Write(result); err == nil {
+				fmt.Println(successColor("✓ Command copied to clipboard"))
 			}
 		}
 		return true
@@ -277,6 +279,11 @@ func handleSpecialCommands(input string, history *terminal.History, spinner *ui.
 			fmt.Println("Sorry, I couldn't provide an explanation.")
 		} else {
 			fmt.Println(result)
+
+			// For explanations, we might want to copy them as well
+			if err := clipboard.Write(result); err == nil {
+				fmt.Println(successColor("✓ Explanation copied to clipboard"))
+			}
 		}
 		return true
 	}
