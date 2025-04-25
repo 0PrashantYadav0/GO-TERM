@@ -23,6 +23,9 @@ func main() {
 	// Clear console
 	fmt.Print("\033[H\033[2J")
 
+	// Force enable colors
+	ai.EnableColors()
+
 	// Print enhanced banner with animation
 	printEnhancedBanner()
 
@@ -147,9 +150,24 @@ func main() {
 		// Add to our custom history
 		history.Add(input)
 
-		// Execute regular command with animated indicator
-		fmt.Println(color.New(color.FgHiBlue).Sprint("→ Executing command..."))
-		terminal.ExecuteCommand(input)
+		// Execute regular command with animated loading screen
+		cmdDone := make(chan bool)
+
+		// Start spinner in a goroutine
+		spinner.Start(color.New(color.FgHiBlue, color.Bold).Sprint("⚡ Executing: ") +
+			color.New(color.FgHiCyan).Sprint(input))
+
+		// Execute the command in a goroutine
+		go func() {
+			terminal.ExecuteCommand(input)
+			cmdDone <- true
+		}()
+
+		// Wait for command to complete
+		<-cmdDone
+
+		// Stop the spinner
+		spinner.Stop()
 	}
 }
 
