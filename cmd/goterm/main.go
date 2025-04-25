@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/peterh/liner"
@@ -22,8 +23,8 @@ func main() {
 	// Clear console
 	fmt.Print("\033[H\033[2J")
 
-	// Print banner
-	printBanner()
+	// Print enhanced banner with animation
+	printEnhancedBanner()
 
 	// Start clipboard monitor in a goroutine
 	suggestions := make(chan string)
@@ -52,6 +53,9 @@ func main() {
 	spinner := ui.NewSpinner()
 
 	for {
+		// Display colorful divider before each prompt
+		printDivider()
+
 		// Display prompt - use a simple prompt that won't cause issues
 		rawPrompt := ai.FormatPrompt()
 		// Strip any ANSI color codes or other special characters
@@ -59,7 +63,7 @@ func main() {
 
 		// Use a simple prompt if there are issues
 		if strings.Contains(safePrompt, "\r") || strings.Contains(safePrompt, "\n") {
-			safePrompt = "> "
+			safePrompt = getColorfulPrompt()
 		}
 
 		// Check for clipboard suggestions (non-blocking)
@@ -90,7 +94,8 @@ func main() {
 
 			if suggestion != "" {
 				// If we have a suggestion, show it separately to avoid prompt issues
-				fmt.Print("\r" + safePrompt + suggestion)
+				suggestedText := color.New(color.FgHiMagenta).Sprint(suggestion)
+				fmt.Print("\r" + safePrompt + suggestedText)
 				input, err = line.Prompt("")
 				fmt.Print("\r\033[K") // Clear the line
 			} else {
@@ -105,7 +110,8 @@ func main() {
 			if err.Error() == "Interrupted" {
 				continue // Allow Ctrl+C to just cancel the current input
 			}
-			fmt.Printf("Simple mode activated due to error: %s\n", err)
+			errorText := color.New(color.FgHiRed).Sprintf("Simple mode activated due to error: %s", err)
+			fmt.Println(errorText)
 
 			// Fall back to simple input method
 			fmt.Print(safePrompt)
@@ -129,7 +135,7 @@ func main() {
 
 		// Handle exit command
 		if input == "exit" {
-			fmt.Println("Goodbye!")
+			printExitMessage()
 			return
 		}
 
@@ -141,48 +147,148 @@ func main() {
 		// Add to our custom history
 		history.Add(input)
 
-		// Execute regular command
+		// Execute regular command with animated indicator
+		fmt.Println(color.New(color.FgHiBlue).Sprint("→ Executing command..."))
 		terminal.ExecuteCommand(input)
 	}
 }
 
-func printBanner() {
+func printEnhancedBanner() {
 	cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
-	green := color.New(color.FgGreen).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
+	green := color.New(color.FgGreen, color.Bold).SprintFunc()
+	yellow := color.New(color.FgYellow, color.Bold).SprintFunc()
+	magenta := color.New(color.FgMagenta, color.Bold).SprintFunc()
+	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
 
 	width := utils.GetTerminalWidth()
 
-	bannerText := []string{
-		"╭───────────────────────────────────────────────╮",
-		"│                                               │",
-		"│   " + cyan("GO-TERM") + " - " + green("Intelligent Terminal Assistant") + "   │",
-		"│                                               │",
-		"│   " + yellow("✨ Powered by Gemini AI and Go ✨") + "         │",
-		"│                                               │",
-		"╰───────────────────────────────────────────────╯",
+	// Colorful top border with gradient effect
+	topBorder := "╭" + strings.Repeat("━", width-2) + "╮"
+	fmt.Println(blue(topBorder))
+
+	// Logo with animation
+	logoLines := []string{
+		"",
+		"   ██████╗  ██████╗     ████████╗███████╗██████╗ ███╗   ███╗",
+		"  ██╔════╝ ██╔═══██╗    ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║",
+		"  ██║  ███╗██║   ██║       ██║   █████╗  ██████╔╝██╔████╔██║",
+		"  ██║   ██║██║   ██║       ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║",
+		"  ╚██████╔╝╚██████╔╝       ██║   ███████╗██║  ██║██║ ╚═╝ ██║",
+		"   ╚═════╝  ╚═════╝        ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝",
+		"",
 	}
 
-	// Center the banner based on terminal width
-	for _, line := range bannerText {
-		padding := (width - len(utils.StripAnsi(line))) / 2
-		if padding < 0 {
-			padding = 0
+	// Animate the logo
+	for _, line := range logoLines {
+		centerPadding := (width - len(utils.StripAnsi(line))) / 2
+		if centerPadding < 0 {
+			centerPadding = 0
 		}
-		fmt.Println(strings.Repeat(" ", padding) + line)
+
+		fmt.Print(strings.Repeat(" ", centerPadding))
+		// Animate each character
+		for _, char := range line {
+			switch char {
+			case '█':
+				fmt.Print(cyan(string(char)))
+			case '╔', '╗', '╚', '╝', '═', '║':
+				fmt.Print(magenta(string(char)))
+			default:
+				fmt.Print(string(char))
+			}
+			time.Sleep(1 * time.Millisecond)
+		}
+		fmt.Println()
 	}
+
+	// Tagline with sparkle
+	tagline := "✨ " + green("Intelligent Terminal Assistant") + " - " + yellow("Powered by Gemini AI") + " ✨"
+	centerPadding := (width - len(utils.StripAnsi(tagline))) / 2
+	if centerPadding < 0 {
+		centerPadding = 0
+	}
+	fmt.Println(strings.Repeat(" ", centerPadding) + tagline)
+
+	// Version info
+	versionInfo := magenta("v1.0.0") + " - " + yellow("Your AI-powered command line companion")
+	centerPadding = (width - len(utils.StripAnsi(versionInfo))) / 2
+	if centerPadding < 0 {
+		centerPadding = 0
+	}
+	fmt.Println(strings.Repeat(" ", centerPadding) + versionInfo)
+	fmt.Println()
+
+	// Bottom border with gradient
+	bottomBorder := "╰" + strings.Repeat("━", width-2) + "╯"
+	fmt.Println(blue(bottomBorder))
+
+	// Command help section with improved formatting
+	fmt.Println()
+	helpTitle := "📋 " + yellow("Available Commands:") + " 📋"
+	centerPadding = (width - len(utils.StripAnsi(helpTitle))) / 2
+	if centerPadding < 0 {
+		centerPadding = 0
+	}
+	fmt.Println(strings.Repeat(" ", centerPadding) + helpTitle)
 
 	cmds := []string{
-		"  • " + cyan("hm") + " - Get AI help for fixing the last error",
-		"  • " + cyan("hp <query>") + " - Ask AI for a command",
-		"  • " + cyan("he <query>") + " - Get AI explanation for a command",
+		"  • " + cyan("hm") + " - " + green("Get AI help for fixing the last error"),
+		"  • " + cyan("hp <query>") + " - " + green("Ask AI for a command"),
+		"  • " + cyan("he <query>") + " - " + green("Get AI explanation for a command"),
+		"  • " + cyan("history") + " - " + green("Show command history"),
+		"  • " + cyan("exit") + " - " + green("Exit GO-TERM"),
+	}
+
+	for _, cmd := range cmds {
+		fmt.Println(cmd)
+		time.Sleep(50 * time.Millisecond) // Small delay for animation effect
 	}
 
 	fmt.Println()
-	for _, cmd := range cmds {
-		fmt.Println(cmd)
+}
+
+func printDivider() {
+	width := utils.GetTerminalWidth()
+	divider := strings.Repeat("─", width)
+	fmt.Println(color.New(color.FgHiBlack).Sprint(divider))
+}
+
+func getColorfulPrompt() string {
+	// Get current directory for the prompt
+	dir, _ := os.Getwd()
+	if home, err := os.UserHomeDir(); err == nil {
+		dir = strings.Replace(dir, home, "~", 1)
 	}
+
+	// Create colorful prompt components
+	timestamp := color.New(color.FgHiBlack).Sprintf("[%s]", time.Now().Format("15:04:05"))
+	directory := color.New(color.FgHiBlue, color.Bold).Sprintf("%s", dir)
+	promptChar := color.New(color.FgHiMagenta, color.Bold).Sprint(" ❯ ")
+
+	return timestamp + " " + directory + promptChar
+}
+
+func printExitMessage() {
+	// Create a colorful exit message with animation
+	exitMsg := "Thank you for using GO-TERM! Goodbye!"
 	fmt.Println()
+
+	// Print characters with rainbow colors one by one
+	colorFuncs := []func(a ...interface{}) string{
+		color.New(color.FgRed, color.Bold).SprintFunc(),
+		color.New(color.FgYellow, color.Bold).SprintFunc(),
+		color.New(color.FgGreen, color.Bold).SprintFunc(),
+		color.New(color.FgCyan, color.Bold).SprintFunc(),
+		color.New(color.FgBlue, color.Bold).SprintFunc(),
+		color.New(color.FgMagenta, color.Bold).SprintFunc(),
+	}
+
+	for i, char := range exitMsg {
+		colorIndex := i % len(colorFuncs)
+		fmt.Print(colorFuncs[colorIndex](string(char)))
+		time.Sleep(30 * time.Millisecond)
+	}
+	fmt.Println("\n")
 }
 
 func handleSpecialCommands(input string, history *terminal.History, spinner *ui.Spinner) bool {
@@ -192,10 +298,13 @@ func handleSpecialCommands(input string, history *terminal.History, spinner *ui.
 	}
 
 	cmd := parts[0]
-	successColor := color.New(color.FgGreen).SprintFunc()
+	successColor := color.New(color.FgGreen, color.Bold).SprintFunc()
+	errorColor := color.New(color.FgRed, color.Bold).SprintFunc()
+	headerColor := color.New(color.FgMagenta, color.Bold).SprintFunc()
 
 	switch cmd {
 	case "history":
+		fmt.Println(headerColor("📜 Command History:"))
 		history.Show()
 		return true
 
@@ -208,16 +317,16 @@ func handleSpecialCommands(input string, history *terminal.History, spinner *ui.
 		return true
 
 	case "hm": // Help Me (fix last error)
-		spinner.Start("Processing last error...")
+		spinner.Start(color.New(color.FgCyan).Sprint("✨ Processing last error..."))
 		result, err := ai.GenerateCommandForHm()
 		spinner.Stop()
 
 		if err != nil {
-			fmt.Println("Error getting AI help:", err)
+			fmt.Println(errorColor("Error getting AI help:"), err)
 		} else if result == "3d8a19a704" {
-			fmt.Println("Sorry, I couldn't help with that error.")
+			fmt.Println(errorColor("Sorry, I couldn't help with that error."))
 		} else {
-			fmt.Println("Try:", result)
+			fmt.Println(headerColor("🚀 Try:"), color.New(color.FgHiCyan, color.Bold).Sprint(result))
 
 			// Copy the command to clipboard
 			if err := clipboard.Write(result); err == nil {
@@ -228,46 +337,85 @@ func handleSpecialCommands(input string, history *terminal.History, spinner *ui.
 
 	case "hp": // Help Please (get command suggestion)
 		if len(parts) < 2 {
-			fmt.Println("Usage: hp <your query>")
+			fmt.Println(errorColor("Usage:"), "hp <your query>")
 			return true
 		}
 
 		query := strings.Join(parts[1:], " ")
-		spinner.Start("Processing your query...")
+		spinner.Start(color.New(color.FgCyan).Sprint("✨ Processing your query..."))
 		result, err := ai.GenerateCommandForHp(query)
 		spinner.Stop()
 
 		if err != nil {
-			fmt.Println("Error getting AI help:", err)
+			fmt.Println(errorColor("Error getting AI help:"), err)
 		} else if result == "3d8a19a704" {
-			fmt.Println("Sorry, I couldn't generate a command for that query.")
+			fmt.Println(errorColor("Sorry, I couldn't generate a command for that query."))
 		} else {
-			fmt.Println("Try:", result)
+			fmt.Println(headerColor("🚀 Try:"), color.New(color.FgHiCyan, color.Bold).Sprint(result))
 
 			// Copy the command to clipboard
 			if err := clipboard.Write(result); err == nil {
 				fmt.Println(successColor("✓ Command copied to clipboard"))
+			}
+
+			// Offer to execute the command
+			fmt.Print(color.New(color.FgYellow, color.Bold).Sprint("Execute this command? [y/N]: "))
+			reader := bufio.NewReader(os.Stdin)
+			response, _ := reader.ReadString('\n')
+			response = strings.TrimSpace(response)
+
+			if strings.ToLower(response) == "y" {
+				history.Add(result)
+				fmt.Println(color.New(color.FgGreen).Sprint("→ Executing suggested command..."))
+				terminal.ExecuteCommand(result)
 			}
 		}
 		return true
 
 	case "he": // Help Explain
 		if len(parts) < 2 {
-			fmt.Println("Usage: he <your query>")
+			fmt.Println(errorColor("Usage:"), "he <your query>")
 			return true
 		}
 
 		query := strings.Join(parts[1:], " ")
-		spinner.Start("Getting explanation...")
+		spinner.Start(color.New(color.FgCyan).Sprint("✨ Getting explanation..."))
 		result, err := ai.ExplainCommand(query)
 		spinner.Stop()
 
+		fmt.Println(headerColor("📚 Explanation:"))
+
 		if err != nil {
-			fmt.Println("Error getting explanation:", err)
+			fmt.Println(errorColor("Error getting explanation:"), err)
 		} else if result == "3d8a19a704" {
-			fmt.Println("Sorry, I couldn't provide an explanation.")
+			fmt.Println(errorColor("Sorry, I couldn't provide an explanation."))
 		} else {
-			fmt.Println(result)
+			// Print the explanation in a box
+			width := utils.GetTerminalWidth()
+			boxWidth := width - 4
+
+			// Top border
+			fmt.Println(color.New(color.FgHiBlack).Sprint("┌" + strings.Repeat("─", boxWidth) + "┐"))
+
+			// Split explanation into lines and print with padding
+			explLines := strings.Split(result, "\n")
+			for _, line := range explLines {
+				// Handle line wrapping for long lines
+				for len(line) > boxWidth-4 {
+					fmt.Print(color.New(color.FgHiBlack).Sprint("│ "))
+					fmt.Print(color.New(color.FgHiWhite).Sprint(line[:boxWidth-4]))
+					fmt.Println(color.New(color.FgHiBlack).Sprint(" │"))
+					line = line[boxWidth-4:]
+				}
+				fmt.Print(color.New(color.FgHiBlack).Sprint("│ "))
+				fmt.Print(color.New(color.FgHiWhite).Sprint(line))
+				padding := boxWidth - 2 - len(line)
+				fmt.Print(strings.Repeat(" ", padding))
+				fmt.Println(color.New(color.FgHiBlack).Sprint(" │"))
+			}
+
+			// Bottom border
+			fmt.Println(color.New(color.FgHiBlack).Sprint("└" + strings.Repeat("─", boxWidth) + "┘"))
 
 			// For explanations, we might want to copy them as well
 			if err := clipboard.Write(result); err == nil {
@@ -286,7 +434,7 @@ func setupSignalHandler() {
 
 	go func() {
 		<-c
-		fmt.Println("\nExiting GO-TERM...")
+		fmt.Println("\n" + color.New(color.FgYellow, color.Bold).Sprint("Exiting GO-TERM..."))
 		os.Exit(0)
 	}()
 }
