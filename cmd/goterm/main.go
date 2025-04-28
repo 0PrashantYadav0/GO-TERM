@@ -213,11 +213,10 @@ func printEnhancedBanner() {
 
 	// Animate the logo
 	for _, line := range logoLines {
-		centerPadding := (width - len(utils.StripAnsi(line))) / 2
+		centerPadding := width/3
 		if centerPadding < 0 {
 			centerPadding = 0
 		}
-
 		fmt.Print(strings.Repeat(" ", centerPadding))
 		// Animate each character
 		for _, char := range line {
