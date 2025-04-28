@@ -267,8 +267,9 @@ func printEnhancedBanner() {
 
 func printDivider() {
 	width := utils.GetTerminalWidth()
-	divider := strings.Repeat("─", width)
-	fmt.Println(color.New(color.FgHiBlack).Sprint(divider))
+	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
+	bottomBorder := "╰" + strings.Repeat("━", width-2) + "╯"
+	fmt.Println(blue(bottomBorder))
 }
 
 func getColorfulPrompt() string {
