@@ -81,6 +81,15 @@ const (
 You are a smart command-line assistant. The question the user has asked is -> %s
 Explain it to the user properly, focusing on command-line concepts. If you cannot explain something just respond with 3d8a19a704 and nothing else. The output will be passed to a terminal so keep it clean and use clear formatting.
 `
+
+	instructionForChat = `
+You are a helpful assistant answering a user's question. Provide a concise, informative answer in 3-4 lines maximum.
+Be accurate, to the point, and helpful.
+
+The question is: %s
+
+Remember to keep your answer to 3-4 lines maximum.
+`
 )
 
 func getApiKey() (string, error) {
@@ -197,6 +206,17 @@ func ExplainCommand(query string) (string, error) {
 	}
 
 	prompt := fmt.Sprintf(instructionForExplain, query)
+
+	return callGeminiAPI(apiKey, prompt)
+}
+
+func ChatWithAI(question string) (string, error) {
+	apiKey, err := getApiKey()
+	if err != nil {
+		return "", err
+	}
+
+	prompt := fmt.Sprintf(instructionForChat, question)
 
 	return callGeminiAPI(apiKey, prompt)
 }

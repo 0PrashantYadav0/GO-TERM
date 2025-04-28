@@ -213,7 +213,7 @@ func printEnhancedBanner() {
 
 	// Animate the logo
 	for _, line := range logoLines {
-		centerPadding := width/3
+		centerPadding := width / 3
 		if centerPadding < 0 {
 			centerPadding = 0
 		}
@@ -267,6 +267,7 @@ func printEnhancedBanner() {
 		"  • " + cyan("hm") + " - " + green("Get AI help for fixing the last error"),
 		"  • " + cyan("hp <query>") + " - " + green("Ask AI for a command"),
 		"  • " + cyan("he <query>") + " - " + green("Get AI explanation for a command"),
+		"  • " + cyan("chat <question>") + " - " + green("Get a brief answer to your question"),
 		"  • " + cyan("history") + " - " + green("Show command history"),
 		"  • " + cyan("exit") + " - " + green("Exit GO-TERM"),
 	}
@@ -442,6 +443,55 @@ func handleSpecialCommands(input string, history *terminal.History, spinner *ui.
 			if err := clipboard.Write(result); err == nil {
 				fmt.Println(successColor("✓ Explanation copied to clipboard"))
 			}
+		}
+		return true
+
+	case "chat": // Chat with AI
+		if len(parts) < 2 {
+			fmt.Println(errorColor("Usage:"), "chat <your question>")
+			return true
+		}
+
+		question := strings.Join(parts[1:], " ")
+		spinner.Start(color.New(color.FgCyan).Sprint("✨ Thinking..."))
+		result, err := ai.ChatWithAI(question)
+		spinner.Stop()
+
+		fmt.Println(headerColor("💬 Answer:"))
+
+		if err != nil {
+			fmt.Println(errorColor("Error getting answer:"), err)
+		} else if result == "3d8a19a704" {
+			fmt.Println(errorColor("Sorry, I couldn't answer that question."))
+		} else {
+			// Print the answer in a box
+			width := utils.GetTerminalWidth()
+			boxWidth := width - 4
+
+			// Top border
+			fmt.Println(color.New(color.FgHiBlack).Sprint("┌" + strings.Repeat("─", boxWidth) + "┐"))
+
+			// Split answer into lines and print with padding
+			answerLines := strings.Split(result, "\n")
+			for _, line := range answerLines {
+				// Handle line wrapping for long lines
+				for len(line) > boxWidth-4 {
+					fmt.Print(color.New(color.FgHiBlack).Sprint("│ "))
+					fmt.Print(color.New(color.FgHiWhite).Sprint(line[:boxWidth-4]))
+					fmt.Println(color.New(color.FgHiBlack).Sprint(" │"))
+					line = line[boxWidth-4:]
+				}
+				fmt.Print(color.New(color.FgHiBlack).Sprint("│ "))
+				fmt.Print(color.New(color.FgHiWhite).Sprint(line))
+				padding := boxWidth - 2 - len(line)
+				fmt.Print(strings.Repeat(" ", padding))
+				fmt.Println(color.New(color.FgHiBlack).Sprint(" │"))
+			}
+
+			// Bottom border
+			fmt.Println(color.New(color.FgHiBlack).Sprint("└" + strings.Repeat("─", boxWidth) + "┘"))
+
+			// Note: Not copying to clipboard as requested
 		}
 		return true
 	}
