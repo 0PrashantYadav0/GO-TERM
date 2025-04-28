@@ -44,8 +44,24 @@ func main() {
 	defer line.Close()
 
 	// Configure liner
-	line.SetCtrlCAborts(true)
-	line.SetTabCompletionStyle(liner.TabPrints)
+	line.SetCtrlCAborts(false)
+	line.SetTabCompletionStyle(liner.TabCircular)
+
+	// Add command history completion
+	line.SetWordCompleter(func(line string, pos int) (head string, completions []string, tail string) {
+		if pos == len(line) { // Only suggest at the end of the line
+			suggestions := []string{}
+			if line != "" {
+				// Get matching history commands
+				recent := history.GetRecent(line)
+				if recent != "" && recent != line {
+					suggestions = append(suggestions, recent)
+				}
+			}
+			return line, suggestions, ""
+		}
+		return "", nil, ""
+	})
 
 	// Load command history to liner
 	if f, err := os.Open(terminal.GetHistoryFilePath()); err == nil {
@@ -96,13 +112,18 @@ func main() {
 			}()
 
 			if suggestion != "" {
-				// If we have a suggestion, show it separately to avoid prompt issues
+				// If we have a clipboard suggestion, show it separately
 				suggestedText := color.New(color.FgHiMagenta).Sprint(suggestion)
 				fmt.Print("\r" + safePrompt + suggestedText)
 				input, err = line.Prompt("")
 				fmt.Print("\r\033[K") // Clear the line
 			} else {
+				// Use prompt with suggestion functionality
+				// This shows the suggestion but lets user continue typing
 				input, err = line.Prompt(safePrompt)
+
+				// We don't need this code here - the SetWordCompleter above handles tab completion
+				// and pressing tab will complete the history command
 			}
 		}()
 
