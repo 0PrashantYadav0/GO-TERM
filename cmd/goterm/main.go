@@ -390,18 +390,6 @@ func handleSpecialCommands(input string, history *terminal.History, spinner *ui.
 			if err := clipboard.Write(result); err == nil {
 				fmt.Println(successColor("✓ Command copied to clipboard"))
 			}
-
-			// Offer to execute the command
-			fmt.Print(color.New(color.FgYellow, color.Bold).Sprint("Execute this command? [y/N]: "))
-			reader := bufio.NewReader(os.Stdin)
-			response, _ := reader.ReadString('\n')
-			response = strings.TrimSpace(response)
-
-			if strings.ToLower(response) == "y" {
-				history.Add(result)
-				fmt.Println(color.New(color.FgGreen).Sprint("→ Executing suggested command..."))
-				terminal.ExecuteCommand(result)
-			}
 		}
 		return true
 
