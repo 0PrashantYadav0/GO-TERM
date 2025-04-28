@@ -29,11 +29,13 @@ GO-TERM is an intelligent terminal assistant built in Go and powered by Gemini A
   - [📦 Installation](#-installation)
     - [Option 1: Install from source](#option-1-install-from-source)
     - [Option 2: Install using Go](#option-2-install-using-go)
+    - [Option 3: Using Docker](#option-3-using-docker)
   - [Add Gemini API Key ( Very Important )](#add-gemini-api-key--very-important-)
   - [⚙️ Configuration](#️-configuration)
   - [🚀 Usage](#-usage)
     - [Starting GO-TERM](#starting-go-term)
     - [Available Commands](#available-commands)
+    - [Chat Feature](#chat-feature)
     - [Clipboard Integration](#clipboard-integration)
   - [📁 Project Structure](#-project-structure)
   - [💾 Files and Configuration](#-files-and-configuration)
@@ -51,6 +53,7 @@ GO-TERM is an intelligent terminal assistant built in Go and powered by Gemini A
 - 🔄 **Error resolution** - Use AI to fix your last error with a simple command
 - 📋 **Clipboard monitoring** - Get command suggestions based on clipboard content
 - 📚 **Command explanations** - Get AI explanations for any command or concept
+- 💬 **Chat with AI** - Get concise answers to your questions in 3-4 lines
 - 🎨 **Beautiful UI** - Colorful terminal interface with animations and spinners
 - 📜 **Command history** - Persistent command history with search capabilities
 - 💻 **Seamless shell integration** - Works alongside your regular terminal commands
@@ -86,7 +89,22 @@ sudo mv goterm /usr/local/bin/
 go install github.com/0PrashantYadav0/GO-TERM/cmd/goterm@latest
 ```
 
+### Option 3: Using Docker
+
+```bash
+# Clone the repository
+git clone https://github.com/0PrashantYadav0/GO-TERM.git
+cd GO-TERM
+
+# Build the Docker image
+docker build -t go-term .
+
+# Run GO-TERM in a container
+docker run -it --rm go-term
+```
+
 ## Add Gemini API Key ( Very Important )
+
 To use GO-TERM, you need to set up your Gemini API key. You can do this by creating a JSON file in your home directory.
 Create a file named `~/.goterm.json` and add your API key in the following format:
 
@@ -143,8 +161,22 @@ GO-TERM supports all regular shell commands, plus these special commands:
 | `hm` | Get AI help for fixing your last error | `hm` |
 | `hp <query>` | Ask AI for a command | `hp create a zip file of all jpg files` |
 | `he <query>` | Get AI explanation for a command or concept | `he what does chmod 755 mean` |
+| `chat <question>` | Get a brief AI answer to your question | `chat what is quantum computing?` |
 | `history` | Show command history | `history` |
 | `exit` | Exit GO-TERM | `exit` |
+
+### Chat Feature
+
+The `chat` command allows you to ask questions and get concise answers from Gemini AI:
+
+```bash
+chat what is quantum computing?
+```
+
+- Provides brief, informative answers in 3-4 lines
+- Displays responses in a nicely formatted box
+- Answers are not copied to clipboard or stored
+- Perfect for quick information without disrupting your workflow
 
 ### Clipboard Integration
 
@@ -168,6 +200,7 @@ GO-TERM/
 │   └── ui/              # User interface components
 ├── pkg/
 │   └── utils/           # Utility functions
+├── Dockerfile           # Docker container definition
 └── go.mod               # Go module definition
 └── go.sum               # Go module dependencies
 └── README.md            # Project documentation
