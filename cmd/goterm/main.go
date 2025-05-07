@@ -55,6 +55,15 @@ func main() {
 
 	spinner := ui.NewSpinner()
 
+	// Configure liner for tab completion
+	line.SetCompleter(func(line string) (c []string) {
+		suggestion := getCommandSuggestion(line)
+		if suggestion != "" {
+			c = append(c, suggestion)
+		}
+		return
+	})
+
 	for {
 		// Display colorful divider before each prompt
 		printDivider()
@@ -508,4 +517,14 @@ func setupSignalHandler() {
 		fmt.Println("\n" + color.New(color.FgYellow, color.Bold).Sprint("Exiting GO-TERM..."))
 		os.Exit(0)
 	}()
+}
+
+// Function to get command suggestion
+func getCommandSuggestion(input string) string {
+	// Use AI to generate command suggestion
+	suggestion, err := ai.GenerateCommandForHp(input)
+	if err != nil || suggestion == "3d8a19a704" {
+		return ""
+	}
+	return suggestion
 }
