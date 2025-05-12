@@ -2,6 +2,7 @@ package ai
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -165,7 +166,7 @@ func getLastCommandLog() (*CommandLog, error) {
 	return &logs[len(logs)-1], nil
 }
 
-func GenerateCommandForHm() (string, error) {
+func GenerateCommandForHm(ctx context.Context) (string, error) {
 	apiKey, err := getApiKey()
 	if err != nil {
 		return "", err
@@ -184,10 +185,10 @@ func GenerateCommandForHm() (string, error) {
 
 	fullPrompt := prompt + "\n" + string(lastLogJSON)
 
-	return callGeminiAPI(apiKey, fullPrompt)
+	return callGeminiAPI(ctx, apiKey, fullPrompt)
 }
 
-func GenerateCommandForHp(query string) (string, error) {
+func GenerateCommandForHp(ctx context.Context, query string) (string, error) {
 	apiKey, err := getApiKey()
 	if err != nil {
 		return "", err
@@ -196,10 +197,10 @@ func GenerateCommandForHp(query string) (string, error) {
 	prompt := fmt.Sprintf(instructionForHp, runtime.GOOS)
 	fullPrompt := prompt + "\n" + query
 
-	return callGeminiAPI(apiKey, fullPrompt)
+	return callGeminiAPI(ctx, apiKey, fullPrompt)
 }
 
-func ExplainCommand(query string) (string, error) {
+func ExplainCommand(ctx context.Context, query string) (string, error) {
 	apiKey, err := getApiKey()
 	if err != nil {
 		return "", err
@@ -207,10 +208,10 @@ func ExplainCommand(query string) (string, error) {
 
 	prompt := fmt.Sprintf(instructionForExplain, query)
 
-	return callGeminiAPI(apiKey, prompt)
+	return callGeminiAPI(ctx, apiKey, prompt)
 }
 
-func ChatWithAI(question string) (string, error) {
+func ChatWithAI(ctx context.Context, question string) (string, error) {
 	apiKey, err := getApiKey()
 	if err != nil {
 		return "", err
@@ -218,10 +219,10 @@ func ChatWithAI(question string) (string, error) {
 
 	prompt := fmt.Sprintf(instructionForChat, question)
 
-	return callGeminiAPI(apiKey, prompt)
+	return callGeminiAPI(ctx, apiKey, prompt)
 }
 
-func callGeminiAPI(apiKey string, prompt string) (string, error) {
+func callGeminiAPI(ctx context.Context, apiKey string, prompt string) (string, error) {
 	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=%s", apiKey)
 
 	request := GeminiRequest{
@@ -247,7 +248,14 @@ func callGeminiAPI(apiKey string, prompt string) (string, error) {
 		return "", err
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestData))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(requestData))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
