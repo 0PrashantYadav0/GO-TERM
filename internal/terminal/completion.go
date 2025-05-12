@@ -26,17 +26,39 @@ func (c *Completer) Complete(input string) []string {
 		return nil
 	}
 
-	// First word - command completion
+	// First word - command completion (including internal commands)
 	if len(parts) == 1 {
+		internalMatches := c.CompleteInternalCommands(parts[0])
+		if len(internalMatches) > 0 {
+			return internalMatches
+		}
 		return c.completeCommand(parts[0])
 	}
 
-	// Command flags completion
+	// Special completion for internal commands
+	switch parts[0] {
+	case "session", "sess":
+		if len(parts) == 2 {
+			subcommands := []string{"create", "switch", "list", "close", "layout"}
+			return filterByPrefix(subcommands, parts[1])
+		}
+	case "alias", "a":
+		if len(parts) == 2 {
+			subcommands := []string{"add", "remove", "list"}
+			return filterByPrefix(subcommands, parts[1])
+		}
+	case "bookmark", "bm":
+		if len(parts) == 2 {
+			subcommands := []string{"add", "remove", "list", "goto"}
+			return filterByPrefix(subcommands, parts[1])
+		}
+	}
+
+	// Continue with normal completion
 	if strings.HasPrefix(parts[len(parts)-1], "-") {
 		return c.completeFlags(parts[0], parts[len(parts)-1])
 	}
 
-	// Path completion
 	return c.completePath(parts[len(parts)-1])
 }
 
@@ -107,5 +129,42 @@ func (c *Completer) completePath(prefix string) []string {
 		}
 	}
 
+	return matches
+}
+
+// CompleteInternalCommands completes GO-TERM specific commands
+func (c *Completer) CompleteInternalCommands(prefix string) []string {
+	commands := []string{
+		"hp",
+		"he",
+		"hm",
+		"chat",
+		"history",
+		"exit",
+		"session",
+		"alias",
+		"bookmark",
+		"config",
+		"update",
+		"version",
+		"help",
+	}
+
+	var matches []string
+	for _, cmd := range commands {
+		if strings.HasPrefix(cmd, prefix) {
+			matches = append(matches, cmd)
+		}
+	}
+	return matches
+}
+
+func filterByPrefix(items []string, prefix string) []string {
+	var matches []string
+	for _, item := range items {
+		if strings.HasPrefix(item, prefix) {
+			matches = append(matches, item)
+		}
+	}
 	return matches
 }
